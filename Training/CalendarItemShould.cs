@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Linq;
 using Shouldly;
 using Xunit;
@@ -75,7 +76,6 @@ namespace Training
 
 
         [Fact]
-        
         public void SplitInTwo_WhenItemStartsInPreviousYearAndEndsInCurrentYear()
         {
             CalendarItem item = NewCalendarItem(
@@ -96,7 +96,7 @@ namespace Training
             result[1].EndDate.ShouldBe(item.EndDate);
         }
 
-        [Fact(Skip = "FIXME")]
+        [Fact]
         public void SplitInTwo_WhenItemStartsDuringYearAndEndsAfterYear()
         {
             CalendarItem item = NewCalendarItem(
@@ -117,7 +117,7 @@ namespace Training
             result[1].EndDate.ShouldBe(item.EndDate);
         }
 
-        [Fact(Skip = "FIXME")]
+        [Fact]
         public void SplitInThree_WhenItemStartsInPreviousYearAndEndsAfterYear()
         {
             CalendarItem item = NewCalendarItem(
@@ -143,7 +143,7 @@ namespace Training
             result[2].EndDate.ShouldBe(item.EndDate);
         }
 
-        [Theory(Skip = "FIXME if you can")]
+        [Theory]
         [InlineData(DateTimeKind.Local)]
         [InlineData(DateTimeKind.Utc)]
         public void KeepDateTimeKind_WhenSplitting(DateTimeKind kind)
@@ -170,6 +170,30 @@ namespace Training
                 EndDate = dateTime,
                 Title = "Title",
             };
+        }
+
+        // Made by lipan:
+
+        [Fact]
+        public void ThrowAnException_WhenEndDateIsBeforeStartDate()
+        {
+            CalendarItem item = NewCalendarItem(
+                new DateTime(2019, 12, 20),
+                new DateTime(2017, 1, 5));
+
+            Assert.Throws<InvalidConstraintException>(() => item.MaybeSplit(2018));
+
+        }
+
+        [Fact]
+        public void ThrowAnException_WhenEndDateHasDifferentKindInReferenceToStartDate()
+        {
+            CalendarItem item = NewCalendarItem(
+                new DateTime(2017, 12, 20,0,0,0, DateTimeKind.Local),
+                new DateTime(2019, 1, 5,0,0,0, DateTimeKind.Utc));
+
+            Assert.Throws<InvalidConstraintException>(() => item.MaybeSplit(2018));
+
         }
     }
 }

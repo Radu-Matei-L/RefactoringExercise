@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 
 namespace Training
@@ -11,36 +12,84 @@ namespace Training
         public DateTime StartDate { set; get; }
         public DateTime EndDate { set; get; }
 
-        public IEnumerable<CalendarItem> MaybeSplit(int year)
+        public IEnumerable<CalendarItem> MaybeSplit(int currentYear)
         {
-            ICollection<CalendarItem> splittedCalendarItems = new List<CalendarItem>();
-            DateTime date = DateTime.Today;
-            var lastDayOfTheCurrentYear = new DateTime(date.Year, 12, 31);
-            var firstDayOfTheNextYear = new DateTime(date.Year + 1, 1, 1);
-            if (EndDate < lastDayOfTheCurrentYear)
+            ValidateDates();
+
+            if ( GetNumberOfYears() > 0)
             {
-                splittedCalendarItems.Add(this);
+                return Split(currentYear);
             }
             else
             {
-                var currentYearItem = new CalendarItem
-                {
-                    Id = Id,
-                    Title = Title,
-                    StartDate = StartDate,
-                    EndDate = lastDayOfTheCurrentYear,
-                };
-                var nextYearItem = new CalendarItem
-                {
-                    Id = Id,
-                    Title = Title,
-                    StartDate = firstDayOfTheNextYear,
-                    EndDate = EndDate,
-                };
-                splittedCalendarItems.Add(currentYearItem);
-                splittedCalendarItems.Add(nextYearItem);
+                ICollection<CalendarItem> splitCalendarItems = new List<CalendarItem>();
+                splitCalendarItems.Add(this);
+                return splitCalendarItems.ToArray();
+            }
+        }
+
+        private int GetNumberOfYears()
+        {
+            var numberOfYearsBetween = EndDate.Year - StartDate.Year;
+            return numberOfYearsBetween;
+        }
+
+        private IEnumerable<CalendarItem> Split(int currentYear)
+        {
+            ICollection<CalendarItem> splitCalendarItems = new List<CalendarItem>();
+
+            var dateTimeKind = GetDateTimeKind();
+
+            DateTime splitStartDate = StartDate;
+            var splitEndDate = GetEndOfYear(splitStartDate.Year, dateTimeKind);
+            for (int numberOfSplits = 0; numberOfSplits < GetNumberOfYears(); numberOfSplits++)
+            {
+                splitCalendarItems.Add(CloneCalendarItemForPeriod(splitStartDate,splitEndDate));
+                splitStartDate = GetStartOfYear(splitEndDate.Year + 1, dateTimeKind);
+                splitEndDate = GetEndOfYear(splitStartDate.Year, dateTimeKind);
             }
 
-            return splittedCalendarItems.ToArray();
+            splitCalendarItems.Add(CloneCalendarItemForPeriod(splitStartDate,EndDate));
+
+            return splitCalendarItems.ToArray();
+        }
+
+        private CalendarItem CloneCalendarItemForPeriod(DateTime startDate, DateTime endDate)
+        {
+            return new CalendarItem
+            {
+                Id = Id,
+                Title = Title,
+                StartDate = startDate,
+                EndDate = endDate,
+            };
+        }
+
+        private DateTime GetEndOfYear(int year, DateTimeKind dateTimeKind)
+        {
+            return new DateTime(year, 12, 31, 23, 59, 0, dateTimeKind);
+        }
+
+        private DateTime GetStartOfYear(int year, DateTimeKind dateTimeKind)
+        {
+            return new DateTime(year, 1, 1, 0, 0, 0, dateTimeKind);
+        }
+
+        private DateTimeKind GetDateTimeKind()
+        {
+            return StartDate.Kind;
+        }
+
+        private bool ValidateDates()
+        {
+            if (EndDate < StartDate)
+            {
+                throw  new InvalidConstraintException("EndDate should be bigger than StartDate");
+            }
+            if (EndDate.Kind != StartDate.Kind)
+            {
+                throw new InvalidConstraintException("EndDate and StartDate should have the same DateTimeKind");
+            }
+            return true;
         }
     }}
