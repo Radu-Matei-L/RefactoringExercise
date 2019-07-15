@@ -30,8 +30,7 @@ namespace Training
 
         private int GetNumberOfYears()
         {
-            var numberOfYearsBetween = EndDate.Year - StartDate.Year;
-            return numberOfYearsBetween;
+            return EndDate.Year - StartDate.Year;
         }
 
         private IEnumerable<CalendarItem> Split(int currentYear)
